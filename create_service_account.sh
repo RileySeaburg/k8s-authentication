@@ -9,7 +9,8 @@ CLUSTER_ROLE_BINDING_NAME="quantumforge-cluster-role-binding"
 # Create Namespace if it doesn't exist
 kubectl get namespace "$NAMESPACE" &> /dev/null || kubectl create namespace "$NAMESPACE"
 
-# Create the ServiceAccount in the specified Namespace
+# Delete the existing ServiceAccount if it exists and recreate it
+kubectl delete serviceaccount "$SERVICE_ACCOUNT_NAME" --namespace "$NAMESPACE" --ignore-not-found
 kubectl create serviceaccount "$SERVICE_ACCOUNT_NAME" --namespace "$NAMESPACE"
 
 # Create the ClusterRole
@@ -40,29 +41,11 @@ subjects:
   namespace: $NAMESPACE
 EOF
 
-# Wait for the ServiceAccount secret to be created
-SECRETS_CHECK_INTERVAL=5
-SECRETS_MAX_CHECKS=10
-CURRENT_CHECK=0
-
-echo "Waiting for the ServiceAccount secret to be created..."
-
-while [[ -z "$SERVICE_ACCOUNT_SECRET_NAME" && $CURRENT_CHECK -lt $SECRETS_MAX_CHECKS ]]; do
-  SERVICE_ACCOUNT_SECRET_NAME=$(kubectl get serviceaccount "$SERVICE_ACCOUNT_NAME" --namespace "$NAMESPACE" -o jsonpath='{.secrets[0].name}')
-  if [[ -z "$SERVICE_ACCOUNT_SECRET_NAME" ]]; then
-    sleep $SECRETS_CHECK_INTERVAL
-    let CURRENT_CHECK=CURRENT_CHECK+1
-  fi
-done
-
-if [[ -z "$SERVICE_ACCOUNT_SECRET_NAME" ]]; then
-  echo "Service Account secret not found. Exiting."
-  exit 1
-fi
-
-echo "Service Account secret found: $SERVICE_ACCOUNT_SECRET_NAME"
+# Wait for the secret associated with the ServiceAccount to be created by the control plane
+sleep 5
 
 # Get the ServiceAccount token
+SERVICE_ACCOUNT_SECRET_NAME=$(kubectl get serviceaccount "$SERVICE_ACCOUNT_NAME" --namespace "$NAMESPACE" -o jsonpath='{.secrets[0].name}')
 TOKEN=$(kubectl get secret "$SERVICE_ACCOUNT_SECRET_NAME" --namespace "$NAMESPACE" -o jsonpath='{.data.token}' | base64 --decode)
 
 # Output the token
