@@ -51,13 +51,15 @@ echo "Waiting for ServiceAccount secret to be created..."
 for ((i=0; i<10; i++)); do
   SERVICE_ACCOUNT_SECRET_NAME=$(kubectl get serviceaccount "$SERVICE_ACCOUNT_NAME" --namespace "$NAMESPACE" -o jsonpath='{.secrets[0].name}' --ignore-not-found)
   if [ ! -z "$SERVICE_ACCOUNT_SECRET_NAME" ]; then
+    echo "Found secret: $SERVICE_ACCOUNT_SECRET_NAME"
     break
   fi
+  echo "Secret not ready yet, waiting..."
   sleep 1
 done
 
 if [ -z "$SERVICE_ACCOUNT_SECRET_NAME" ]; then
-  echo "Failed to find the secret for ServiceAccount $SERVICE_ACCOUNT_NAME in namespace $NAMESPACE"
+  echo "Failed to find the secret for ServiceAccount $SERVICE_ACCOUNT_NAME in namespace $NAMESPACE after waiting 10 seconds."
   exit 1
 fi
 
@@ -65,7 +67,7 @@ fi
 TOKEN=$(kubectl get secret "$SERVICE_ACCOUNT_SECRET_NAME" --namespace "$NAMESPACE" -o jsonpath='{.data.token}' | base64 --decode)
 
 if [ -z "$TOKEN" ]; then
-  echo "Failed to retrieve the token for ServiceAccount $SERVICE_ACCOUNT_NAME"
+  echo "Failed to retrieve the token for ServiceAccount $SERVICE_ACCOUNT_NAME. Exiting."
   exit 1
 fi
 
