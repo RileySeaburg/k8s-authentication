@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Define variables
-NAMESPACE="mynamespace"
-SERVICE_ACCOUNT_NAME="myserviceaccount"
-CLUSTER_ROLE_NAME="myclusterrole"
-CLUSTER_ROLE_BINDING_NAME="myclusterrolebinding"
+NAMESPACE="quantumforge-platform"
+SERVICE_ACCOUNT_NAME="quantumforge-service-account"
+CLUSTER_ROLE_NAME="quantumforge-cluster-role"
+CLUSTER_ROLE_BINDING_NAME="quantumforge-cluster-role-binding"
 
 # Create Namespace if it doesn't exist
 kubectl get namespace "$NAMESPACE" &> /dev/null || kubectl create namespace "$NAMESPACE"
@@ -20,7 +20,7 @@ metadata:
   name: $CLUSTER_ROLE_NAME
 rules:
 - apiGroups: ["", "apps", "extensions", "networking.k8s.io"]
-  resources: ["deployments", "services", "ingresses", "pods"]
+  resources: ["deployments", "replicasets", "pods", "services", "ingresses"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
 EOF
 
